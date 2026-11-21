@@ -1,0 +1,32 @@
+name: Publish OrkSearch release
+# Publishing is intentionally manual until the renamed plugin is accepted on Kanboard 1.2.50.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP 8.3 with SQLite
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite,sqlite3,mbstring
+      - name: Verify and package
+        run: bash scripts/build-release.sh
+      - name: Create versioned GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n "/function getPluginVersion()/,/}/s/.*return '\([^']*\)'.*/\1/p" Plugin.php | head -1)
+          ZIP="dist/OrkSearch-${VERSION}.zip"
+          test -f "$ZIP"
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} exists. Refusing to overwrite an already published asset."
+            exit 0
+          fi
+          gh release create "$TAG" "$ZIP" --target "$GITHUB_SHA" --title "OrkSearch ${VERSION}" --notes-file RELEASE_NOTES.md --latest
