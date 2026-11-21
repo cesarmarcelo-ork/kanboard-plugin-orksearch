@@ -93,7 +93,9 @@ class SearchEngine extends Base
             $task['comments'] = isset($comments[$id]) ? $comments[$id] : array();
             $task['filenames'] = isset($filenames[$id]) ? $filenames[$id] : array();
             $task['subtasks'] = isset($subtasks[$id]) ? $subtasks[$id] : array();
-            $task['assignee'] = trim($task['assignee_name'] ?: $task['assignee_username']);
+            // Unassigned tasks have NULL user columns due to LEFT JOIN; PHP 8.2+
+            // deprecates trim(NULL), which can spoil JSON responses when errors are displayed.
+            $task['assignee'] = trim((string) (($task['assignee_name'] ?? '') ?: ($task['assignee_username'] ?? '')));
             $match = self::matchText($task, $query);
             // Keep one result per card but retain every matching origin.
             // This includes multiple attachments linked to the same task.
