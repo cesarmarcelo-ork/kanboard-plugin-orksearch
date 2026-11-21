@@ -59,7 +59,7 @@ Apenas anexos de cartões são indexados. São usados limites por lote e por arq
 
 ### Compatibilidade, segurança e limites
 
-- A versão anterior **0.5.0-rc3** foi testada funcionalmente nos Kanboard **1.2.50** (notebook) e **1.2.57** (homelab), com SQLite local. A **renomeação para OrkSearch v1.0.0** ainda requer validação funcional no notebook antes da release pública.
+- O **OrkSearch v1.0.0** foi homologado funcionalmente no **Kanboard 1.2.50** (notebook), incluindo os oito filtros combináveis e a correção de cartões sem responsável no PHP 8.2+. A versão experimental anterior **0.5.0-rc3** também foi testada no Kanboard **1.2.57** (homelab). A nova versão 1.0.0 ainda não foi homologada na homelab.
 - Escopo de pesquisa limitado ao projeto autorizado e aos anexos existentes; observações com visibilidade restrita seguem as permissões aplicáveis.
 - O plugin não altera o núcleo, o banco principal, nem cria tabelas no Kanboard. O índice documental é um banco SQLite lateral opcional.
 - No máximo 2.000 tarefas por consulta no mecanismo de pesquisa atual (limite de desempenho). Não há OCR, indexação de anexos somente do projeto, nem suporte homologado para arquivos legados DOC/XLS.
@@ -83,7 +83,7 @@ Install the official release archive so that the plugin is in `plugins/OrkSearch
 
 ### Compatibility and security
 
-Kanboard `>=1.2.50` is the declared minimum; the legacy 0.5.0-rc3 was tested on `1.2.50` and `1.2.57` with SQLite/local files. The renamed OrkSearch v1.0.0 still requires functional acceptance testing before public release. Access checks enforce project permissions and comment visibility. No Kanboard schema changes, template overrides, external APIs or telemetry. The document index is read-only from PHP and writable only from the separately operated indexer. OCR and remote attachments are unsupported.
+Kanboard `>=1.2.50` is the declared minimum. OrkSearch v1.0.0 passed functional acceptance testing on Kanboard `1.2.50`, including all eight cumulative filters and a PHP 8.2+ fix for unassigned tasks. The legacy RC3 was also tested on `1.2.57`; the renamed v1.0.0 has not yet been functionally tested on that homelab version. Access checks enforce project permissions and comment visibility. No Kanboard schema changes, template overrides, external APIs or telemetry. The document index is read-only from PHP and writable only from the separately operated indexer. OCR and remote attachments are unsupported.
 
 ## Development and licensing
 
