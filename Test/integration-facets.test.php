@@ -51,7 +51,9 @@ namespace {
             'project_id'=>41,'category_id'=>7,'category_name'=>'Financeira',
             'column_id'=>4,'column_name'=>'Em Andamento',
             'swimlane_id'=>$raia,'swimlane_name'=>'Receitas',
-            'owner_id'=>11,'assignee_name'=>'Cesar','assignee_username'=>'cesar',
+            'owner_id'=>$id === 1 ? 0 : 11,
+            'assignee_name'=>$id === 1 ? null : 'Cesar',
+            'assignee_username'=>$id === 1 ? null : 'cesar',
             'is_active'=>$status,'date_due'=>0,'date_modification'=>1000+$id,
             'priority'=>$p,'score'=>$score);
     };
@@ -62,7 +64,31 @@ namespace {
     $session = new class {function getRole(){return 'app-user';}};
     $engine = new SearchEngine(array('db'=>$db,'helper'=>$helper,'userSession'=>$session));
     $empty=array_fill_keys(array('swimlane','column','category','tag','assignee','priority','complexity','status'),'');
-    $all=$engine->run(41,11,'',$empty,0,'facets');
+    // Fail on the exact PHP 8.2+ regression reported by the maintainer:
+    // LEFT JOIN users yields NULL names for unassigned tasks.
+    set_error_handler(function ($severity, $message) {
+        if ($severity & (E_DEPRECATED | E_USER_DEPRECATED)) {
+            throw new \ErrorException($message, 0, $severity);
+        }
+        return false;
+    });
+    try {
+        $all=$engine->run(41,11,'',$empty,0,'facets');
+    } finally {
+        restore_error_handler();
+    }
+    $unassigned = array_values(array_filter($all['facets']['assignee'], function ($item) {
+        return $item['value'] === '0';
+    }));
+    if (count($unassigned) !== 1 || $unassigned[0]['label'] !== 'Unassigned' || $unassigned[0]['count'] !== 1) {
+        throw new \Exception('Unassigned facet missing or incorrectly labeled');
+    }
+    $onlyUnassigned = $empty;
+    $onlyUnassigned['assignee'] = '0';
+    $unassignedHits = $engine->run(41,11,'',$onlyUnassigned,0,'results');
+    if ($unassignedHits['total'] !== 1 || $unassignedHits['hits'][0]['id'] !== 1) {
+        throw new \Exception('Filtering unassigned tasks failed');
+    }
     if ($all['total'] !== 4) throw new \Exception('Expected 4 cards');
     foreach (array('priority'=>array('0','2','4','10'), 'complexity'=>array('0','3','10')) as $f=>$expected) {
         $values=array_column($all['facets'][$f],'value');
@@ -75,5 +101,5 @@ namespace {
     $selected=$empty; $selected['priority']='0'; $selected['complexity']='0';
     $zero=$engine->run(41,11,'',$selected,0,'results');
     if ($zero['total'] !== 1 || $zero['hits'][0]['id'] !== 1) throw new \Exception('Zero-value facet failed');
-    echo "PASS: integration mock validates native columns, dynamic counts, numeric sorting, combined filters and zero values.\n";
+    echo "PASS: integration mock validates native columns, dynamic counts, numeric sorting, combined filters, null assignees and zero values.\n";
 }
